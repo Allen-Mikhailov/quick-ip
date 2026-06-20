@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-pi-fleet-agent: reports this Raspberry Pi's local IP address to the
-Pi Fleet Firestore database, so it shows up in the web dashboard.
+quick-ip-service: reports this Raspberry Pi's local IP address to the
+Quick IP Firestore database, so it shows up in the web dashboard.
 
 Reads config.json (same folder, or path given as argv[1]) containing:
   project_id, api_key, device_id, token, name, interval_seconds
@@ -19,7 +19,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
-CONFIG_PATH = os.path.dirname(os.path.abspath(__file__)), "config.json"
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 
 def load_config():
@@ -96,7 +96,7 @@ def report(cfg, ip, wifi):
 def main():
     cfg = load_config()
     interval = cfg["interval_seconds"]
-    print(f"pi-fleet-agent starting for device '{cfg['name']}' (every {interval}s)")
+    print(f"quick-ip-service starting for device '{cfg['name']}' (every {interval}s)")
 
     last_ip = None
     last_wifi = None

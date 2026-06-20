@@ -5,26 +5,61 @@ service cloud.firestore {
 
     match /devices/{deviceId} {
 
-      // The signed-in owner can read and delete their own devices.
-      allow read, delete: if request.auth != null
-                          && request.auth.uid == resource.data.ownerUid;
+      // Anyone listed in ownerUids has full control of the device.
+      function isOwner() {
+        return request.auth != null && request.auth.uid in resource.data.ownerUids;
+      }
 
-      // The signed-in owner can create a new device, as long as they
-      // set themselves as the owner.
+      // Someone who's been invited (by email) can see the device exists,
+      // so the app can find and accept invites on their behalf.
+      function isInvited() {
+        return request.auth != null
+          && request.auth.token.email != null
+          && request.auth.token.email in resource.data.pendingInviteEmails;
+      }
+
+      // An invited user can add themselves as an owner, but ONLY themselves —
+      // this checks that exactly one uid (their own) was added, exactly their
+      // own email was removed from the invite list, and nothing else changed.
+      function isValidInviteClaim() {
+        let beforeOwners = resource.data.ownerUids;
+        let afterOwners = request.resource.data.ownerUids;
+        let beforeInvites = resource.data.pendingInviteEmails;
+        let afterInvites = request.resource.data.pendingInviteEmails;
+        let email = request.auth.token.email;
+        return isInvited()
+          && afterOwners.hasAll(beforeOwners)
+          && afterOwners.hasAny([request.auth.uid])
+          && afterOwners.size() == beforeOwners.size() + 1
+          && beforeInvites.hasAny([email])
+          && !afterInvites.hasAny([email])
+          && afterInvites.size() == beforeInvites.size() - 1
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['ownerUids', 'ownerEmails', 'pendingInviteEmails']);
+      }
+
+      allow read: if isOwner() || isInvited();
+
+      // Whoever creates the device becomes its sole initial owner.
       allow create: if request.auth != null
-                    && request.auth.uid == request.resource.data.ownerUid;
+                    && request.auth.uid in request.resource.data.ownerUids
+                    && request.resource.data.ownerUids.size() == 1;
 
-      // Two ways to update a device:
-      //  1. The signed-in owner can change anything (e.g. rename it).
-      //  2. An unauthenticated caller (the Raspberry Pi) can update ONLY
-      //     the ip/lastSeen fields, and only if it already knows the
-      //     device's secret token. Knowing the token is the Pi's "login".
-      allow update: if (request.auth != null && request.auth.uid == resource.data.ownerUid)
+      allow delete: if isOwner();
+
+      // Three ways to update a device:
+      //  1. Any owner can change anything (rename, share, remove an owner...).
+      //  2. An invited user can claim ownership of their own invite.
+      //  3. An unauthenticated caller (the Raspberry Pi) can update ONLY
+      //     ip / wifi / lastSeen, and only if it already knows the device's
+      //     secret token. Knowing the token is the Pi's "login".
+      allow update: if isOwner()
+                    || isValidInviteClaim()
                     || (
                       request.resource.data.token == resource.data.token &&
-                      request.resource.data.ownerUid == resource.data.ownerUid &&
+                      request.resource.data.ownerUids == resource.data.ownerUids &&
                       request.resource.data.name == resource.data.name &&
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ip', 'lastSeen'])
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ip', 'wifi', 'lastSeen'])
                     );
     }
   }
