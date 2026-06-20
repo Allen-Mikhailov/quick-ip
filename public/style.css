@@ -193,6 +193,15 @@ main{
   font-family: inherit;
 }
 
+.device-card .wifi{
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.status-row.muted{
+  color: var(--muted);
+}
+
 .device-card .card-actions{
   display: flex;
   gap: 8px;

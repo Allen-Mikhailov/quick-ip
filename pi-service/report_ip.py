@@ -12,6 +12,7 @@ No third-party packages required — just the Python 3 standard library.
 import json
 import os
 import socket
+import subprocess
 import sys
 import time
 import urllib.error
@@ -46,7 +47,19 @@ def get_local_ip():
         s.close()
 
 
-def report(cfg, ip):
+def get_wifi_ssid():
+    """Returns the currently connected Wi-Fi network name, or "" if this
+    Pi is on ethernet, not connected, or iwgetid isn't installed."""
+    try:
+        result = subprocess.run(
+            ["iwgetid", "-r"], capture_output=True, text=True, timeout=5
+        )
+        return result.stdout.strip()
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return ""
+
+
+def report(cfg, ip, wifi):
     """PATCH the device's Firestore document with the current IP and timestamp.
     Including `token` in the update proves to the security rules that this
     caller actually knows the device's secret, not just its document ID."""
@@ -54,6 +67,7 @@ def report(cfg, ip):
         f"https://firestore.googleapis.com/v1/projects/{cfg['project_id']}"
         f"/databases/(default)/documents/devices/{cfg['device_id']}"
         f"?updateMask.fieldPaths=ip"
+        f"&updateMask.fieldPaths=wifi"
         f"&updateMask.fieldPaths=lastSeen"
         f"&updateMask.fieldPaths=token"
         f"&key={cfg['api_key']}"
@@ -64,6 +78,7 @@ def report(cfg, ip):
     body = {
         "fields": {
             "ip": {"stringValue": ip},
+            "wifi": {"stringValue": wifi},
             "lastSeen": {"timestampValue": now},
             "token": {"stringValue": cfg["token"]},
         }
@@ -86,13 +101,16 @@ def main():
     print(f"pi-fleet-agent starting for device '{cfg['name']}' (every {interval}s)")
 
     last_ip = None
+    last_wifi = None
     while True:
         try:
             ip = get_local_ip()
-            report(cfg, ip)
-            if ip != last_ip:
-                print(f"[{datetime.now().isoformat(timespec='seconds')}] reported ip {ip}")
-                last_ip = ip
+            wifi = get_wifi_ssid()
+            report(cfg, ip, wifi)
+            if ip != last_ip or wifi != last_wifi:
+                label = wifi if wifi else "wired/no wifi"
+                print(f"[{datetime.now().isoformat(timespec='seconds')}] reported ip {ip} ({label})")
+                last_ip, last_wifi = ip, wifi
         except urllib.error.HTTPError as e:
             print(f"[error] Firestore rejected the update ({e.code}): {e.read().decode(errors='ignore')}")
         except Exception as e:

@@ -1,4 +1,12 @@
 // ---- Firebase init ----
+if (!window.firebaseConfig || !window.firebaseConfig.apiKey || window.firebaseConfig.apiKey.startsWith('PASTE_')) {
+  const msg = 'firebase-config.js did not load, or still has placeholder values. ' +
+    'Check that public/firebase-config.js exists, loads before app.js (Network tab), ' +
+    'and has your real project values filled in.';
+  document.body.innerHTML = `<div style="font-family:sans-serif;max-width:560px;margin:60px auto;padding:20px;border:1px solid #f3c6c6;background:#fdecec;border-radius:8px;">${msg}</div>`;
+  throw new Error(msg);
+}
+
 firebase.initializeApp(window.firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -30,6 +38,7 @@ const copyConfigBtn = document.getElementById('copyConfigBtn');
 const closePairBtn = document.getElementById('closePairBtn');
 
 let unsubscribeDevices = null;
+let currentUserEmail = null;
 
 // ---- Auth ----
 signInBtn.addEventListener('click', () => {
@@ -41,13 +50,16 @@ signOutBtn.addEventListener('click', () => auth.signOut());
 
 auth.onAuthStateChanged(user => {
   if (user) {
+    currentUserEmail = user.email || null;
     loginView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
     userbox.classList.remove('hidden');
     userPhoto.src = user.photoURL || '';
     userName.textContent = user.displayName || user.email || '';
+    claimPendingInvites(user);
     watchDevices(user.uid);
   } else {
+    currentUserEmail = null;
     loginView.classList.remove('hidden');
     dashboardView.classList.add('hidden');
     userbox.classList.add('hidden');
@@ -56,11 +68,30 @@ auth.onAuthStateChanged(user => {
   }
 });
 
+// If someone shared a device with this account's email before they ever
+// signed in, claim it now — turns a pending invite into real ownership.
+async function claimPendingInvites(user) {
+  if (!user.email) return;
+  try {
+    const snap = await db.collection('devices')
+      .where('pendingInviteEmails', 'array-contains', user.email)
+      .get();
+    const claims = snap.docs.map(doc => doc.ref.update({
+      ownerUids: firebase.firestore.FieldValue.arrayUnion(user.uid),
+      ownerEmails: firebase.firestore.FieldValue.arrayUnion(user.email),
+      pendingInviteEmails: firebase.firestore.FieldValue.arrayRemove(user.email)
+    }));
+    await Promise.all(claims);
+  } catch (err) {
+    console.error('Could not claim pending invites:', err);
+  }
+}
+
 // ---- Device list ----
 function watchDevices(uid) {
   if (unsubscribeDevices) unsubscribeDevices();
   unsubscribeDevices = db.collection('devices')
-    .where('ownerUid', '==', uid)
+    .where('ownerUids', 'array-contains', uid)
     .onSnapshot(snapshot => {
       const docs = snapshot.docs.sort((a, b) => a.data().name.localeCompare(b.data().name));
       renderDevices(docs);
@@ -86,12 +117,24 @@ function renderDevices(docs) {
       else { dotClass += ' stale'; statusText = 'Last seen ' + relativeTime(age); }
     }
 
+    const owners = d.ownerEmails || [];
+    const invites = d.pendingInviteEmails || [];
+    const sharedBits = [];
+    if (owners.length > 1) sharedBits.push(`Shared with ${owners.filter(e => e !== currentUserEmail).join(', ')}`);
+    if (invites.length) sharedBits.push(`Invited: ${invites.join(', ')}`);
+    const sharedRow = sharedBits.length
+      ? `<div class="status-row muted">${sharedBits.map(escapeHtml).join(' · ')}</div>`
+      : '';
+
     card.innerHTML = `
       <div class="name">${escapeHtml(d.name)}</div>
       <div class="${d.ip ? 'ip' : 'ip unknown'}">${d.ip ? escapeHtml(d.ip) : 'No address yet'}</div>
+      ${d.wifi ? `<div class="wifi">📶 ${escapeHtml(d.wifi)}</div>` : ''}
       <div class="status-row"><span class="${dotClass}"></span>${statusText}</div>
+      ${sharedRow}
       <div class="card-actions">
         <button class="btn ghost small" data-action="ssh">Copy SSH command</button>
+        <button class="btn ghost small" data-action="share">Share</button>
         <button class="btn ghost small" data-action="pair">View config</button>
         <button class="btn danger small" data-action="delete">Delete</button>
       </div>
@@ -102,12 +145,25 @@ function renderDevices(docs) {
       copyToClipboard(`ssh pi@${d.ip}`);
     });
 
+    card.querySelector('[data-action="share"]').addEventListener('click', () => {
+      const email = prompt(`Share "${d.name}" with someone's Google account email:`);
+      if (!email) return;
+      const cleaned = email.trim().toLowerCase();
+      if (!cleaned.includes('@')) { alert('That doesn\'t look like an email address.'); return; }
+      db.collection('devices').doc(doc.id).update({
+        pendingInviteEmails: firebase.firestore.FieldValue.arrayUnion(cleaned)
+      });
+    });
+
     card.querySelector('[data-action="pair"]').addEventListener('click', () => {
       showPairModal(doc.id, d);
     });
 
     card.querySelector('[data-action="delete"]').addEventListener('click', () => {
-      if (confirm(`Remove "${d.name}"? This Pi will stop being tracked.`)) {
+      const warning = owners.length > 1
+        ? `Remove "${d.name}"? This will remove it for all ${owners.length} owners, not just you.`
+        : `Remove "${d.name}"? This Pi will stop being tracked.`;
+      if (confirm(warning)) {
         db.collection('devices').doc(doc.id).delete();
       }
     });
@@ -146,14 +202,17 @@ confirmAddBtn.addEventListener('click', async () => {
   const name = deviceNameInput.value.trim();
   if (!name) { alert('Give the device a name.'); return; }
 
-  const uid = auth.currentUser.uid;
+  const user = auth.currentUser;
   const token = generateToken();
   const docRef = db.collection('devices').doc();
 
   await docRef.set({
-    ownerUid: uid,
+    ownerUids: [user.uid],
+    ownerEmails: [user.email || ''],
+    pendingInviteEmails: [],
     name,
     ip: '',
+    wifi: '',
     token,
     lastSeen: null
   });
