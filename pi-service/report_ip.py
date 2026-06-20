@@ -19,9 +19,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
-CONFIG_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "config.json"
-)
+CONFIG_PATH = os.path.dirname(os.path.abspath(__file__)), "config.json"
 
 
 def load_config():

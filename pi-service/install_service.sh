@@ -17,6 +17,9 @@ if [[ "$EUID" -ne 0 ]]; then
   exit 1
 fi
 
+apt update
+apt install wireless-tools
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="/opt/quick-ip"
 SERVICE_NAME="quick-ip"
@@ -50,8 +53,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=${PYTHON_BIN} ${INSTALL_DIR}/report_ip.py ${INSTALL_DIR}/config.json
+Environment=PYTHONUNBUFFERED=1
+ExecStart=${PYTHON_BIN} -u ${INSTALL_DIR}/report_ip.py ${INSTALL_DIR}/config.json
 Restart=always
+
 RestartSec=10
 User=root
 
@@ -68,3 +73,4 @@ echo
 echo "Done. The service will now start automatically on every boot."
 echo "Check status with:   systemctl status ${SERVICE_NAME}"
 echo "Tail the logs with:  journalctl -u ${SERVICE_NAME} -f"
+
