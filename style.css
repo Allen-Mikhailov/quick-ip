@@ -1,0 +1,262 @@
+:root{
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1c1f24;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #2f6fed;
+  --accent-text: #ffffff;
+  --danger: #d23b3b;
+  --radius: 10px;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.hidden{ display: none !important; }
+
+.topbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.brand{
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.userbox{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar{
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+#userName{
+  font-size: 14px;
+  color: var(--muted);
+}
+
+main{
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+.centered{
+  display: flex;
+  justify-content: center;
+  padding-top: 10vh;
+}
+
+.card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.login-card{
+  max-width: 380px;
+  text-align: center;
+}
+
+.login-card h1{
+  margin: 0 0 8px;
+}
+
+.muted{
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.btn{
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.btn.primary{
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn.primary:hover{ filter: brightness(1.08); }
+
+.btn.ghost{
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn.ghost:hover{ background: var(--bg); }
+
+.btn.danger{
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--border);
+}
+
+.btn.danger:hover{ background: #fdecec; border-color: #f3c6c6; }
+
+.btn.small{
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.dashboard-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.dashboard-header h2{
+  margin: 0;
+  font-size: 20px;
+}
+
+.empty-state{
+  text-align: center;
+}
+
+.device-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.device-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.device-card .name{
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.device-card .status-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c9cdd3;
+  flex-shrink: 0;
+}
+
+.dot.online{ background: #29a745; }
+.dot.stale{ background: #e0a52c; }
+
+.device-card .ip{
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+
+.device-card .ip.unknown{
+  color: var(--muted);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.device-card .card-actions{
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 22, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.modal{
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.pair-modal{
+  max-width: 520px;
+}
+
+.modal h3{
+  margin: 0 0 12px;
+}
+
+.modal label{
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.modal input[type="text"]{
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.modal-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.code-block{
+  background: #11151c;
+  color: #d7dee8;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 10px 0;
+}

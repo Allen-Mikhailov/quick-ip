@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /devices/{deviceId} {
+
+      // The signed-in owner can read and delete their own devices.
+      allow read, delete: if request.auth != null
+                          && request.auth.uid == resource.data.ownerUid;
+
+      // The signed-in owner can create a new device, as long as they
+      // set themselves as the owner.
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.ownerUid;
+
+      // Two ways to update a device:
+      //  1. The signed-in owner can change anything (e.g. rename it).
+      //  2. An unauthenticated caller (the Raspberry Pi) can update ONLY
+      //     the ip/lastSeen fields, and only if it already knows the
+      //     device's secret token. Knowing the token is the Pi's "login".
+      allow update: if (request.auth != null && request.auth.uid == resource.data.ownerUid)
+                    || (
+                      request.resource.data.token == resource.data.token &&
+                      request.resource.data.ownerUid == resource.data.ownerUid &&
+                      request.resource.data.name == resource.data.name &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ip', 'lastSeen'])
+                    );
+    }
+  }
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi Fleet</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">Pi Fleet</div>
+    <div id="userbox" class="userbox hidden">
+      <img id="userPhoto" class="avatar" alt="">
+      <span id="userName"></span>
+      <button id="signOutBtn" class="btn ghost">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Signed-out state -->
+    <section id="loginView" class="centered hidden">
+      <div class="card login-card">
+        <h1>Pi Fleet</h1>
+        <p class="muted">Keep track of every Raspberry Pi's address, so you can SSH in without hunting for it.</p>
+        <button id="signInBtn" class="btn primary">Sign in with Google</button>
+      </div>
+    </section>
+
+    <!-- Signed-in state -->
+    <section id="dashboardView" class="hidden">
+      <div class="dashboard-header">
+        <h2>Your devices</h2>
+        <button id="addDeviceBtn" class="btn primary">Add device</button>
+      </div>
+
+      <div id="emptyState" class="card empty-state hidden">
+        <p>No devices yet.</p>
+        <p class="muted">Add one and you'll get a config file to drop on the Pi.</p>
+      </div>
+
+      <div id="deviceList" class="device-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- Add device modal -->
+  <div id="addModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3>Add a device</h3>
+      <label for="deviceNameInput">Name</label>
+      <input id="deviceNameInput" type="text" placeholder="e.g. living-room-pi" autocomplete="off">
+      <div class="modal-actions">
+        <button id="cancelAddBtn" class="btn ghost">Cancel</button>
+        <button id="confirmAddBtn" class="btn primary">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pairing info modal (shown right after a device is created) -->
+  <div id="pairModal" class="modal-backdrop hidden">
+    <div class="modal pair-modal">
+      <h3>Set up <span id="pairDeviceName"></span></h3>
+      <p class="muted">On the Raspberry Pi, save this as <code>config.json</code> next to <code>report_ip.py</code>, then run the installer. This device's identity lives in this file — don't share it outside your own Pi.</p>
+      <pre id="pairConfig" class="code-block"></pre>
+      <button id="copyConfigBtn" class="btn ghost small">Copy</button>
+      <div class="modal-actions">
+        <button id="closePairBtn" class="btn primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs (compat build — no bundler needed) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

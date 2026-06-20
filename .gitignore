@@ -1,0 +1,24 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebaserc
+
+# Note: public/firebase-config.js is intentionally NOT ignored — Firebase web
+# API keys aren't secret, security is enforced by firestore.rules instead.
+
+# Pi agent secrets — config.example.json is the template, real config.json
+# holds each device's private token and should never be committed
+pi-agent/config.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (only relevant if you ever add tooling via npm)
+node_modules/
+
+# OS/editor noise
+.DS_Store
+*.swp

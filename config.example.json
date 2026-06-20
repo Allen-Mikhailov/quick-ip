@@ -1,0 +1,8 @@
+{
+  "project_id": "your-firebase-project-id",
+  "api_key": "your-firebase-web-api-key",
+  "device_id": "paste-from-dashboard",
+  "token": "paste-from-dashboard",
+  "name": "living-room-pi",
+  "interval_seconds": 60
+}
