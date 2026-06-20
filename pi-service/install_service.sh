@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Installs pi-fleet-agent as a systemd service that starts on every boot
+# Installs quick-ip service as a systemd service that starts on every boot
 # and keeps running, reporting this Pi's IP address to Firestore.
 #
 # Usage:
@@ -18,8 +18,8 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="/opt/pi-fleet-agent"
-SERVICE_NAME="pi-fleet-agent"
+INSTALL_DIR="/opt/quick-ip"
+SERVICE_NAME="quick-ip"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 if [[ ! -f "${SCRIPT_DIR}/config.json" ]]; then
@@ -44,7 +44,7 @@ chmod 600 "${INSTALL_DIR}/config.json"   # the token inside is this Pi's secret
 echo "Writing systemd unit ${SERVICE_FILE} ..."
 cat > "${SERVICE_FILE}" <<EOF
 [Unit]
-Description=Pi Fleet agent - reports this device's IP address
+Description=Quick IP - reports this device's IP address
 After=network-online.target
 Wants=network-online.target
 

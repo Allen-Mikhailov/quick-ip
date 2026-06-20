@@ -4,6 +4,7 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 .firebaserc
+public/firebase-config.json
 
 # Note: public/firebase-config.js is intentionally NOT ignored — Firebase web
 # API keys aren't secret, security is enforced by firestore.rules instead.
